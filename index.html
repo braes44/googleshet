@@ -5,22 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bot Google Sheets</title>
     <script>
-        const SHEET_ID = "1uP70j2dloWqT6tftexTCnZELBxxRpQ11D0CqJj3LLF8";
+        const SHEET_ID = "1JaZLsZIK-E9cAAavbyL0BCuheW9cN7YYB01NMwHuNg4";
         const SHEET_NAME = "Hoja1";
-        const API_KEY = "TU_GOOGLE_SHEETS_API_KEY";  // Sustituir con una clave válida
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzWgxtMxDokrsOaak38eicOn29S8PH5J-VbgMSoMwKet8jcq1ZOYToEXXIShL-QtaBGXA/exec";
 
         async function cargarDatos() {
-            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}?key=${API_KEY}`;
+            const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
             const response = await fetch(url);
-            const data = await response.json();
-            
+            const text = await response.text();
+            const json = JSON.parse(text.substring(47, text.length - 2)); // Formato de respuesta de Google Sheets
+
             let tabla = "<table border='1'><tr>";
-            data.values[0].forEach(col => { tabla += `<th>${col}</th>`; });
+            json.table.cols.forEach(col => { 
+                tabla += `<th>${col.label}</th>`; 
+            });
             tabla += "</tr>";
 
-            data.values.slice(1).forEach(row => {
+            json.table.rows.forEach(row => {
                 tabla += "<tr>";
-                row.forEach(cell => { tabla += `<td>${cell}</td>`; });
+                row.c.forEach(cell => {
+                    tabla += `<td>${cell ? cell.v : ''}</td>`;
+                });
                 tabla += "</tr>";
             });
 
@@ -31,8 +36,7 @@
             const nuevoDato = document.getElementById("nuevoDato").value;
             if (!nuevoDato) return alert("Ingresa un dato");
 
-            const url = `https://script.google.com/macros/s/TU_DEPLOYMENT_ID/exec`;
-            const response = await fetch(url, {
+            const response = await fetch(SCRIPT_URL, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ dato: nuevoDato })
