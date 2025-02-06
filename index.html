@@ -3,61 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bot Google Sheets</title>
+    <title>Datos desde Google Sheets</title>
+</head>
+<body>
+    <h1>Datos de Google Sheets</h1>
+    
+    <table border="1" id="tabla">
+        <thead>
+            <tr>
+                <th>Dato</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
     <script>
         const SHEET_ID = "1JaZLsZIK-E9cAAavbyL0BCuheW9cN7YYB01NMwHuNg4";
-        const SHEET_NAME = "Hoja1";
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzWgxtMxDokrsOaak38eicOn29S8PH5J-VbgMSoMwKet8jcq1ZOYToEXXIShL-QtaBGXA/exec";
+        const SHEET_NAME = "Hoja1"; // Asegúrate de que el nombre coincide con tu hoja
+        const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_NAME}`;
 
         async function cargarDatos() {
-            const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
-            const response = await fetch(url);
-            const text = await response.text();
-            const json = JSON.parse(text.substring(47, text.length - 2)); // Formato de respuesta de Google Sheets
+            try {
+                const response = await fetch(SHEET_URL);
+                const data = await response.text();
+                const filas = data.split("\n").map(row => row.split(","));
+                const tabla = document.getElementById("tabla").getElementsByTagName("tbody")[0];
 
-            let tabla = "<table border='1'><tr>";
-            json.table.cols.forEach(col => { 
-                tabla += `<th>${col.label}</th>`; 
-            });
-            tabla += "</tr>";
-
-            json.table.rows.forEach(row => {
-                tabla += "<tr>";
-                row.c.forEach(cell => {
-                    tabla += `<td>${cell ? cell.v : ''}</td>`;
+                tabla.innerHTML = "";
+                filas.forEach(row => {
+                    let newRow = tabla.insertRow();
+                    let cell = newRow.insertCell(0);
+                    cell.textContent = row[0].replace(/"/g, ""); // Limpia comillas del CSV
                 });
-                tabla += "</tr>";
-            });
-
-            document.getElementById("datos").innerHTML = tabla + "</table>";
-        }
-
-        async function agregarDato() {
-            const nuevoDato = document.getElementById("nuevoDato").value;
-            if (!nuevoDato) return alert("Ingresa un dato");
-
-            const response = await fetch(SCRIPT_URL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ dato: nuevoDato })
-            });
-
-            if (response.ok) {
-                alert("Dato agregado correctamente.");
-                cargarDatos();
-            } else {
-                alert("Error al agregar datos.");
+            } catch (error) {
+                console.error("Error cargando datos:", error);
             }
         }
+
+        cargarDatos();
     </script>
-</head>
-<body onload="cargarDatos()">
-    <h1>Interfaz Bot Google Sheets</h1>
-    <div>
-        <input type="text" id="nuevoDato" placeholder="Escribe un dato">
-        <button onclick="agregarDato()">Agregar</button>
-    </div>
-    <h2>Datos en la hoja:</h2>
-    <div id="datos"></div>
 </body>
 </html>
